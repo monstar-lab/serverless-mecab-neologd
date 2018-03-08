@@ -5,6 +5,13 @@ FROM python:3
 RUN apt-get update && \
       apt-get -y install sudo
 
+# install aws cli to push dictionary to s3
+# use "-e VARNAME=varvalue" to substitute actual values on "docker run" cmd
+ENV AWS_DEFAULT_REGION='[your region]'
+ENV AWS_ACCESS_KEY_ID='[your access key id]'
+ENV AWS_SECRET_ACCESS_KEY='[your secret]'
+RUN pip install awscli
+
 # Copy the current directory contents into the container at /app
 ADD . /app
 
@@ -62,3 +69,8 @@ RUN pip install --trusted-host pypi.python.org -r requirements.txt
 
 # Run app when the container launches
 CMD ["mecab", "-d", "/tmp/neologd", "test-sentence.txt"]
+
+# upload dictionary to s3
+CMD ["aws", "s3", "cp", "/neologd", \
+    "s3://serverless-mecab-neologd-dictionary/neologd", \
+    "--recursive"]
