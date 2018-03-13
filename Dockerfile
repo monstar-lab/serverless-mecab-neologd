@@ -1,16 +1,18 @@
 # Use an official Python runtime as a parent image
 FROM python:3
+#FROM lambci/lambda:build-python3.6
 
 # install system packages
 RUN apt-get update && \
-      apt-get -y install sudo
+      apt-get -y install sudo zip libstdc++6
+#RUN yum update && yum install sudo -y
 
 # install aws cli to push dictionary to s3
 # use "-e VARNAME=varvalue" to substitute actual values on "docker run" cmd
 ENV AWS_DEFAULT_REGION='[your region]'
 ENV AWS_ACCESS_KEY_ID='[your access key id]'
 ENV AWS_SECRET_ACCESS_KEY='[your secret]'
-RUN pip install awscli
+RUN pip3 install awscli
 
 # Copy the current directory contents into the container at /app
 ADD . /app
@@ -24,6 +26,7 @@ RUN bash Miniconda3-latest-Linux-x86_64.sh -p /miniconda3 -b
 RUN rm Miniconda3-latest-Linux-x86_64.sh
 ENV PATH=/miniconda3/bin:${PATH}
 RUN conda update -y conda
+RUN conda install -c dan_blanchard perl-autodie
 
 # install mecab
 RUN mkdir /lambda_neologd
@@ -32,6 +35,7 @@ RUN curl -L \
   -o mecab-0.996.tar.gz
 RUN tar zxvf mecab-0.996.tar.gz && rm mecab-0.996.tar.gz
 WORKDIR mecab-0.996
+ENV CXXFLAGS="$CXXFLAGS -L/usr/lib/x86_64-linux-gnu/libstdc++.so.6 -libstdc++"
 RUN ./configure --prefix=/lambda_neologd/local --enable-utf8-only
 RUN make && make install
 WORKDIR ..
@@ -57,7 +61,7 @@ RUN git clone --depth 1 https://github.com/neologd/mecab-ipadic-neologd
 WORKDIR mecab-ipadic-neologd
 RUN ./bin/install-mecab-ipadic-neologd -y \
     -p /neologd -n --eliminate-redundant-entry
-RUN python /app/seed_normalize.py
+RUN python3 /app/seed_normalize.py
 RUN ./bin/install-mecab-ipadic-neologd -y \
     -p /neologd --eliminate-redundant-entry
 RUN ln -s /neologd /tmp/neologd
@@ -65,12 +69,29 @@ WORKDIR ..
 
 # Install any needed packages specified in requirements.txt
 WORKDIR /app
-RUN pip install --trusted-host pypi.python.org -r requirements.txt
+#RUN pip install --trusted-host pypi.python.org -r requirements.txt
 
-# Run app when the container launches
+# Run test when the container launches
 CMD ["mecab", "-d", "/tmp/neologd", "test-sentence.txt"]
 
-# upload dictionary to s3
+# upload mecab and neologd dictionary to s3
 CMD ["aws", "s3", "cp", "/neologd", \
     "s3://serverless-mecab-neologd-dictionary/neologd", \
     "--recursive"]
+#CMD ["aws", "s3", "cp", "/lambda_neologd", \
+    #"s3://serverless-mecab-neologd-dictionary/mecab", \
+    #"--recursive"]
+
+# create zip for lambda
+#CMD ["sudo", "pip3", "install", "virtualenv"]
+#CMD ["virtualenv", "~/shrink_venv"]
+#CMD ["source", "~/shrink_venv/bin/activate"]
+#CMD ["pip", "install" "mecab-python3"]
+#WORKDIR ~/shrink_venv/lib/python3.6/site-packages
+#CMD ["zip", "-r9", "~/lambda-zip.zip", "*"]
+#CMD ["zip", "-g", "~/lambda-zip-.zip", "/usr/lib/x86_64-linux-gnu/libstdc++.so.6"]
+
+# (WIP/FIXME) zip all needed files for lambda deployment
+WORKDIR /app
+CMD ["cp" "-r", "/lambda_neologd/local/*", "./local/"]
+CMD ["zip", "-r9", "~/lambda-zip.zip", "-x=serverless.env.yml", "-x=serverless.yml", "*"]

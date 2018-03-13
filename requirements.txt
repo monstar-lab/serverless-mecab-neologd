@@ -1,2 +1,1 @@
-boto3
-mecab-python3
+mecab-python
