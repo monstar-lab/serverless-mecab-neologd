@@ -1,1 +1,1 @@
-mecab-python
+-r requirements/aws.txt
