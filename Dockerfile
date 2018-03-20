@@ -69,29 +69,8 @@ WORKDIR ..
 
 # Install any needed packages specified in requirements.txt
 WORKDIR /app
-#RUN pip install --trusted-host pypi.python.org -r requirements.txt
-
-# Run test when the container launches
-CMD ["mecab", "-d", "/tmp/neologd", "test-sentence.txt"]
 
 # upload mecab and neologd dictionary to s3
 CMD ["aws", "s3", "cp", "/neologd", \
-    "s3://serverless-mecab-neologd-dictionary/neologd", \
-    "--recursive"]
-#CMD ["aws", "s3", "cp", "/lambda_neologd", \
-    #"s3://serverless-mecab-neologd-dictionary/mecab", \
-    #"--recursive"]
-
-# create zip for lambda
-#CMD ["sudo", "pip3", "install", "virtualenv"]
-#CMD ["virtualenv", "~/shrink_venv"]
-#CMD ["source", "~/shrink_venv/bin/activate"]
-#CMD ["pip", "install" "mecab-python3"]
-#WORKDIR ~/shrink_venv/lib/python3.6/site-packages
-#CMD ["zip", "-r9", "~/lambda-zip.zip", "*"]
-#CMD ["zip", "-g", "~/lambda-zip-.zip", "/usr/lib/x86_64-linux-gnu/libstdc++.so.6"]
-
-# (WIP/FIXME) zip all needed files for lambda deployment
-WORKDIR /app
-CMD ["cp" "-r", "/lambda_neologd/local/*", "./local/"]
-CMD ["zip", "-r9", "~/lambda-zip.zip", "-x=serverless.env.yml", "-x=serverless.yml", "*"]
+     "s3://serverless-mecab-neologd-dict/neologd", \
+     "--recursive"]

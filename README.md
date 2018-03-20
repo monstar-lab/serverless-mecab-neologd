@@ -2,7 +2,7 @@
 
 ## Prerequisites
 1. Create an AIM user with `AmazonS3FullAccess` privilage.
-2. Create an S3 bucket called `serverless-mecab-neologd-dictionary`
+2. Create an S3 bucket called `serverless-mecab-neologd-dict`
 
 ## Build the dictionary and upload to s3
 Build docker image
